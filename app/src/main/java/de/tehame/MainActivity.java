@@ -1,9 +1,13 @@
 package de.tehame;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.Toast;
 
 import java.io.ByteArrayOutputStream;
@@ -14,14 +18,28 @@ import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
+    /**
+     * ListView mit Photos und kurzer Beschreibung.
+     * Siehe Layout photo_list_item.xml
+     */
+    private ListView photoListe = null;
+
+    private ArrayList<String> beschreibungen = null;
+    private ArrayList<Bitmap> photos = null;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        photoListe = (ListView) this.findViewById(R.id.photoListView);
+
         Intent intent = this.getIntent();
         String action = intent.getAction();
         String type = intent.getType();
+
+        this.beschreibungen = new ArrayList<>();
+        this.photos = new ArrayList<>();
 
         if (Intent.ACTION_SEND.equals(action) && type != null) {
             // Ein Photo als Intent
@@ -44,14 +62,27 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }
+
+        photoListe.setAdapter(new PhotoAdapter(this, beschreibungen, photos));
     }
 
+    /**
+     * Füge ein Photo der Liste hinzu.
+     * @param imageUri Medien URI.
+     */
     private void ladePhoto(Uri imageUri) {
-        Toast.makeText(this, imageUri.toString(), Toast.LENGTH_LONG).show();
+        String beschreibung = imageUri.toString();
+
         try {
             InputStream stream = this.getContentResolver().openInputStream(imageUri);
-            Toast.makeText(this, String.valueOf(this.readBytes(stream).length),
-                    Toast.LENGTH_LONG).show();
+            byte[] binary = this.readBytes(stream);
+            Bitmap bitmap = this.erstelleBitmapAusByteArray(binary);
+
+            beschreibung += " " + (binary.length / 1024) + "KB";
+
+            this.photos.add(bitmap);
+            this.beschreibungen.add(beschreibung);
+
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -59,21 +90,33 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Liest einen InputStream aus und erstellt daraus ein Byte Array.
+     * @param inputStream Input Stream.
+     * @return Byte Array.
+     * @throws IOException I/O Error.
+     */
     public byte[] readBytes(InputStream inputStream) throws IOException {
-        // this dynamically extends to take the bytes you read
         ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
 
-        // this is storage overwritten on each iteration with bytes
         int bufferSize = 1024;
         byte[] buffer = new byte[bufferSize];
 
-        // we need to know how may bytes were read to write them to the byteBuffer
         int len = 0;
         while ((len = inputStream.read(buffer)) != -1) {
             byteBuffer.write(buffer, 0, len);
         }
 
-        // and then we can return your byte array.
         return byteBuffer.toByteArray();
+    }
+
+    /**
+     * Wandelt ein ByteArray in eine Bitmap um, welche in einem ImageView angezeigt werden kann.
+     * @param byteArray Byte Array.
+     * @return Erstellt eine Bitmap.
+     */
+    private Bitmap erstelleBitmapAusByteArray(byte[] byteArray) {
+        Bitmap bmp = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.length);
+        return bmp;
     }
 }
