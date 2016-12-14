@@ -12,7 +12,6 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -97,7 +96,7 @@ public class PhotoAdapter extends BaseAdapter {
 
         try {
             InputStream stream = this.context.getContentResolver().openInputStream(imageUri);
-            byte[] binary = this.readBytes(stream);
+            byte[] binary = InputStreamReader.readBytes(stream);
             Bitmap bitmap = this.erstelleBitmapAusByteArray(binary);
 
             return bitmap;
@@ -109,26 +108,6 @@ public class PhotoAdapter extends BaseAdapter {
         }
 
         return null;
-    }
-
-    /**
-     * Liest einen InputStream aus und erstellt daraus ein Byte Array.
-     * @param inputStream Input Stream.
-     * @return Byte Array.
-     * @throws IOException I/O Error.
-     */
-    public byte[] readBytes(InputStream inputStream) throws IOException {
-        ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
-
-        int bufferSize = 1024;
-        byte[] buffer = new byte[bufferSize];
-
-        int len = 0;
-        while ((len = inputStream.read(buffer)) != -1) {
-            byteBuffer.write(buffer, 0, len);
-        }
-
-        return byteBuffer.toByteArray();
     }
 
     /**
